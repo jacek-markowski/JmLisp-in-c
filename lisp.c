@@ -5,7 +5,7 @@
 #include "mpc.h"
 
 /* Use operator string to see which operation to perform */
-long eval_op(long x, char *op, long y)
+float eval_op(float x, char *op, float y)
 {
   if (strcmp(op, "+") == 0) {
     return x + y;
@@ -20,23 +20,23 @@ long eval_op(long x, char *op, long y)
     return x / y;
   }
   if (strcmp(op, "%") == 0) {
-    return x % y;
+    return (long)x % (long)y;
   }
   return 0;
 }
 
 
-long eval(mpc_ast_t* t) {
+double eval(mpc_ast_t* t) {
   /* If tagged as number return it directly. */
   if (strstr(t->tag, "number")) {
-    return atoi(t->contents);
-  } else if (strstr(t->children[1]->tag, "number")) { return atoi(t->children[1]->contents);}
+    return atof(t->contents);
+  } else if (strstr(t->children[1]->tag, "number")) { return atof(t->children[1]->contents);}
 
   /* The operator is always second child. */
   char* op = t->children[1]->contents;
 
   /* We store the third child in `x` */
-  long x = eval(t->children[2]);
+  float x = eval(t->children[2]);
 
   /* Iterate the remaining children and combining. */
   int i = 3;
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
   /* Define them with the following Language */
   mpca_lang(MPCA_LANG_DEFAULT,
 	    "                                                     \
-      number   : /-?[0-9]+/  ;                             \
+      number   :  /-?[0-9]+\\.?([0-9]*)/ ;                              \
       operator : '+' | '-' | '*' | '/' ;                  \
       expr     : <number> | '(' <number> ')' |'(' <operator> <expr>+ ')' ;  \
       lispy    : /^/ <expr>+ /$/ | /^/ <operator> <expr>+ /$/ ;                        \
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     mpc_result_t r;
     if (mpc_parse("input", input, Lispy, &r)) {
       mpc_ast_t* t = r.output;
-      long result;
+      double result;
       if (!strstr(t->children[1]->tag, "expr")){
 	/* example input lisp> + 1 2 */
 	result = eval(t);
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 	result = eval(t->children[1]);
       }
 
-      printf("=> %li\n", result);
+      printf("=> %.5f\n", result);
       mpc_ast_delete(r.output);
     } else {
       mpc_err_print(r.error);
