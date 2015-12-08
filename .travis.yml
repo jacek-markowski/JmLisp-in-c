@@ -9,7 +9,5 @@ addons:
   apt:
     packages:
     - libedit-dev
-install:
-- sudo apt-get install libedit-dev
 script:
 - make all
