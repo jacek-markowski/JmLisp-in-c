@@ -1,11 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "lisp.h"
 
-#include <editline/readline.h>
-#include "mpc.h"
-
-/* Use operator string to see which operation to perform */
-float eval_op(float x, char *op, float y)
+double evalOp(double x, char *op, double y)
 {
   if (strcmp(op, "+") == 0) {
     return x + y;
@@ -30,67 +25,77 @@ double eval(mpc_ast_t* t) {
   /* If tagged as number return it directly. */
   if (strstr(t->tag, "number")) {
     return atof(t->contents);
-  } else if (strstr(t->children[1]->tag, "number")) { return atof(t->children[1]->contents);}
+  } else if (strstr(t->children[1]->tag, "number")) {
+    return atof(t->children[1]->contents);
+  }
 
   /* The operator is always second child. */
   char* op = t->children[1]->contents;
 
   /* We store the third child in `x` */
-  float x = eval(t->children[2]);
+  double x = eval(t->children[2]);
 
   /* Iterate the remaining children and combining. */
   int i = 3;
   while (strstr(t->children[i]->tag, "expr")) {
-    x = eval_op(x, op, eval(t->children[i]));
+    x = evalOp(x, op, eval(t->children[i]));
     i++;
   }
-
   return x;
 }
 
-
-int main(int argc, char **argv)
+char* lispParseEvaluate(char* expr)
 {
   /* Create some parsers */
   mpc_parser_t *Number = mpc_new("number");
   mpc_parser_t *Operator = mpc_new("operator");
   mpc_parser_t *Expr = mpc_new("expr");
-  mpc_parser_t *Lispy = mpc_new("lispy");
+  mpc_parser_t *Lisp = mpc_new("lisp");
   /* Define them with the following Language */
   mpca_lang(MPCA_LANG_DEFAULT,
 	    "                                                     \
       number   :  /-?[0-9]+\\.?([0-9]*)/ ;                              \
       operator : '+' | '-' | '*' | '/' ;                  \
       expr     : <number> | '(' <number> ')' |'(' <operator> <expr>+ ')' ;  \
-      lispy    : /^/ <expr>+ /$/ | /^/ <operator> <expr>+ /$/ ;                        \
-    ", Number, Operator, Expr, Lispy);
+      lisp    : /^/ <expr>+ /$/ | /^/ <operator> <expr>+ /$/ ;                        \
+    ", Number, Operator, Expr, Lisp);
 
+
+  mpc_result_t r;
+  char* parsed;
+  if (mpc_parse("input", expr, Lisp, &r)) {
+    mpc_ast_t* t = r.output;
+    double result;
+    if (!strstr(t->children[1]->tag, "expr")){
+      /* example input lisp> + 1 2 */
+      result = eval(t);
+    } else {
+      /* example input lisp> (+ 1 2) */
+      result = eval(t->children[1]);
+    }
+    asprintf(&parsed, "%.3f", result);
+    mpc_ast_delete(r.output);
+  } else {
+    char *err = mpc_err_string(r.error);
+    err[strcspn(err, "\n")] = '\0';
+    mpc_err_delete(r.error);
+    mpc_cleanup(4, Number, Operator, Expr, Lisp);
+    return err;
+  }
+  mpc_cleanup(4, Number, Operator, Expr, Lisp);
+  return parsed;
+}
+
+void lispREPL ()
+{
   puts("JmLisp Version 0.1.0");
   puts("Press Ctrl+c to Exit");
   while (1) {
-    char *input = readline("[JmLisp]> ");
+    char *input = readline("*JmLisp*> ");
+    char* p = lispParseEvaluate(input);
     add_history(input);
-
-    mpc_result_t r;
-    if (mpc_parse("input", input, Lispy, &r)) {
-      mpc_ast_t* t = r.output;
-      double result;
-      if (!strstr(t->children[1]->tag, "expr")){
-	/* example input lisp> + 1 2 */
-	result = eval(t);
-      } else {
-	/* example input lisp> (+ 1 2) */
-	result = eval(t->children[1]);
-      }
-
-      printf("=> %.5f\n", result);
-      mpc_ast_delete(r.output);
-    } else {
-      mpc_err_print(r.error);
-      mpc_err_delete(r.error);
-    }
+    printf(">> %s\n", p);
     free(input);
+    free(p);
   }
-  mpc_cleanup(4, Number, Operator, Expr, Lispy);
-  return 0;
 }
