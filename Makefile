@@ -4,7 +4,7 @@ EXE_FILES = src/main.c $(SHARED_FILES)
 TEST_FILES = tests/lisp_test.c tests/seatest/seatest.c $(SHARED_FILES)
 OUT_EXE = build/lisp
 OUT_TEST = build/lisp_test
-LINK = -lm -ledit
+LINK = -L src/readline/ -lm -ledit
 OPTIONS = -Wall -g -D_GNU_SOURCE
 build: $(FILES)
 	mkdir build || echo 1

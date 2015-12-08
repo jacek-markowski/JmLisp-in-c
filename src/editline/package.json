@@ -1,9 +1,0 @@
-{
-  "name": "readline",
-  "version": "0.0.2",
-  "repo": "clibs/readline",
-  "description": "Tiny C readline library",
-  "keywords": ["readline", "tiny"],
-  "license": "MIT",
-  "src": ["readline.c", "readline.h"]
-}
