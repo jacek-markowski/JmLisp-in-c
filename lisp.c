@@ -25,25 +25,12 @@ long eval_op(long x, char *op, long y)
   return 0;
 }
 
-long print_ast(mpc_ast_t * t)
-{
-  if (t->children_num == 0) return 1;
-  for (int i=0; i < t->children_num; i++) {
-    char* tag = t->children[i]->tag;
-    char* contents = t->children[i]->contents;
-    printf("%d :: Tag: %s, Content: %s\n", i,  tag, contents);
-    print_ast(t->children[i]);
-  }
-  return 1;
-}
-
 
 long eval(mpc_ast_t* t) {
-
   /* If tagged as number return it directly. */
   if (strstr(t->tag, "number")) {
     return atoi(t->contents);
-  }
+  } else if (strstr(t->children[1]->tag, "number")) { return atoi(t->children[1]->contents);}
 
   /* The operator is always second child. */
   char* op = t->children[1]->contents;
@@ -72,26 +59,20 @@ int main(int argc, char **argv)
   /* Define them with the following Language */
   mpca_lang(MPCA_LANG_DEFAULT,
 	    "                                                     \
-      number   : /-?[0-9]+/ ;                             \
+      number   : /-?[0-9]+/  ;                             \
       operator : '+' | '-' | '*' | '/' ;                  \
-      expr     : <number> | '(' <operator> <expr>+ ')' ;  \
+      expr     : <number> | '(' <number> ')' |'(' <operator> <expr>+ ')' ;  \
       lispy    : /^/ <expr>+ /$/ | /^/ <operator> <expr>+ /$/ ;                        \
     ", Number, Operator, Expr, Lispy);
-  /* Print version and exit information */
+
   puts("JmLisp Version 0.1.0");
   puts("Press Ctrl+c to Exit");
-  /* In a never ending loop */
   while (1) {
-    /* Output our prompt */
     char *input = readline("[JmLisp]> ");
-    /* add input to history */
     add_history(input);
 
     mpc_result_t r;
-    /* Echo input back to user */
     if (mpc_parse("input", input, Lispy, &r)) {
-      /* On Success Print the AST */
-      //print_ast(r.output);
       mpc_ast_t* t = r.output;
       long result;
       if (!strstr(t->children[1]->tag, "expr")){
@@ -105,11 +86,9 @@ int main(int argc, char **argv)
       printf("=> %li\n", result);
       mpc_ast_delete(r.output);
     } else {
-      /* Otherwise print error */
       mpc_err_print(r.error);
       mpc_err_delete(r.error);
     }
-    /* Free retrived input */
     free(input);
   }
   mpc_cleanup(4, Number, Operator, Expr, Lispy);
