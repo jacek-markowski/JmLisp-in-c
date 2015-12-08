@@ -1,4 +1,7 @@
 language: c
 compiler: gcc
+sudo: true
+install:
+- sudo apt-get install libedit-dev
 script:
 - make all
