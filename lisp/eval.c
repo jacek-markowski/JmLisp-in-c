@@ -14,9 +14,9 @@ lval* lisp_eval_sexp(lenv* e, lval* v) {
   lval* t = v->root;
   lval* new = v;
   int set_root = 0;
-  //GC_COUNT();
+  GC_COUNT();
   gc_mark_sweep(JMLisp.env);
-  //GC_COUNT();
+  GC_COUNT();
   while(t) {
     lval* prev = t->prev;
     lval* next = t->next;
@@ -86,7 +86,6 @@ lval* lisp_call(lenv* e, lval* v) {
     }
   }
   if (has_varargs && args_v) {
-    puts("has varargs");
     args_new = args_new->next; // skip &
     if(args_new) {
       lval* args = lisp_list();
@@ -109,7 +108,7 @@ lval* lisp_call(lenv* e, lval* v) {
   if(!args_new && args_v) return lisp_err("To many arguments.");
 
   /* all arguments passed */
-  if((!args_new || has_varargs) && !args_v) {
+  if((!args_new || has_varargs) || !args_v) {
     new->body->type = LISP_SEXP;
     new->env->parent = JMLisp.env;
     lval* r = lisp_eval(new->env, new->body);
