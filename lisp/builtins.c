@@ -21,12 +21,27 @@ void lisp_lenv_add_builtins(lenv* e) {
   lisp_lenv_add_builtin(e, "load", builtin_load);
   lisp_lenv_add_builtin(e, "error", builtin_error);
   lisp_lenv_add_builtin(e, "if", builtin_if);
+  lisp_lenv_add_builtin(e, "do", builtin_do);
   lisp_lenv_add_builtin(e, "==", builtin_eq);
   lisp_lenv_add_builtin(e, "!=", builtin_ne);
   lisp_lenv_add_builtin(e, ">", builtin_gt);
   lisp_lenv_add_builtin(e, "<", builtin_lt);
   lisp_lenv_add_builtin(e, ">=", builtin_ge);
   lisp_lenv_add_builtin(e, "<=", builtin_le);
+}
+
+lval* builtin_do(lenv* e, lval* a) {
+  LASSERT_TYPE("do", lisp_index(a, 1), 1, LISP_QEXP);
+  lval* t = a->root->next;
+  lval* last;
+  lenv* new_env = lisp_lenv("1null1", lisp_list());
+  new_env->parent = e;
+  while(t) {
+    t->type = LISP_SEXP;
+    last = lisp_eval(new_env, t);
+    t = t->next;
+  }
+  return last;
 }
 
 lval* builtin_op(lenv* e, lval* a, char* op) {

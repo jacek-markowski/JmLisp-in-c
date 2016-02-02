@@ -26,6 +26,7 @@ lval* builtin_load(lenv* e, lval* a);
 lval* builtin_error(lenv* e, lval* a);
 
 lval* builtin_if(lenv* e, lval* a);
+lval* builtin_do(lenv* e, lval* a);
 lval* builtin_eq(lenv* e, lval* a);
 lval* builtin_ne(lenv* e, lval* a);
 lval* builtin_gt(lenv* e, lval* a);
