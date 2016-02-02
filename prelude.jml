@@ -10,6 +10,7 @@
 ;;; Functional Functions
 (def {head} (lambda {x} {list (car x)}))
 (def {tail} cdr)
+(def {\} lambda)
 
 ; Function Definitions
 (def {fun} (lambda {f b} {
@@ -27,13 +28,6 @@
 ; Curried and Uncurried calling
 (def {curry} unpack)
 (def {uncurry} pack)
-
-; Perform Several things in Sequence
-(fun {do & l} {
-  if (== l nil)
-    {nil}
-    {last l}
-})
 
 ;;; Logical Functions
 
