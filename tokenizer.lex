@@ -4,23 +4,27 @@
 #include <stdio.h>
 #include "parser.tab.h"
 #include "lisp/headers/lisp.h"
+ char buf[100];
+ char *s;
 %}
+%x STRING_
 %%
 [;]+.*[\n]  {}
 [a-zA-Z_]+[a-zA-Z0-9_]* { yylval.str = strdup(yytext) ; return SYMBOL; }
-\"(\\.|[^\\"])*\"  { 
-  int len = strlen(yytext);
-  char* p = malloc(sizeof(char) * (len - 1));
-  int j = 0;
-  /* removing quotes from string */
-  for(int i=1; i < len - 1; i++) {
-    p[j++] = yytext[i];
-  }
-  p[len-2] = '\0';
-  yylval.str = strdup(p) ; 
-  free(p);
-  return STRING; 
-} 
+
+\"              { BEGIN STRING_; s = buf; }
+<STRING_>\\n     { *s++ = '\n'; }
+<STRING_>\\t     { *s++ = '\t'; }
+<STRING_>\\\"    { *s++ = '\"'; }
+<STRING_>\"      {
+  *s = 0;
+  BEGIN 0;
+  yylval.str = strdup(buf);
+  return STRING;
+ }
+<STRING_>.       { *s++ = *yytext; }
+
+
 [-+]?[0-9]+([.]?[0-9]*)? { yylval.n = atof(yytext); return NUMBER;}
 "+" { yylval.str = strdup(yytext); return SYMBOL; }
 "\\" { yylval.str = strdup(yytext); return SYMBOL; }
